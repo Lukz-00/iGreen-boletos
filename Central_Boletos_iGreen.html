@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Central de Boletos · iGreen Energy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg:  #020617; --bg2: #0A0F1E; --bg3: #1E293B; --bg4: #334155; --bg5: #475569;
+    --acc: #10B981; --acc2: #34D399; --acc3: #059669;
+    --bdr: rgba(16,185,129,0.15); --bdr2: rgba(16,185,129,0.28);
+    --tx:  #CBD5E1; --tx2: #94A3B8; --tx3: #475569;
+    --red: #EF4444; --red-bg: rgba(239,68,68,0.1);
+    --ylw: #F59E0B; --ylw-bg: rgba(245,158,11,0.1);
+    --grn: #10B981; --grn-bg: rgba(16,185,129,0.12);
+    --gry: #64748B; --gry-bg: rgba(100,116,139,0.15);
+    --blu: #06B6D4; --blu-bg: rgba(6,182,212,0.1);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Epilogue',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.6;}
+
+  /* LAYOUT */
+  .layout{display:flex;min-height:100vh;}
+  .sidebar{width:240px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;overflow-y:auto;}
+  .logo{padding:20px 18px 14px;border-bottom:1px solid var(--bdr);}
+  .logo-row{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
+  .logo-icon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#020617;flex-shrink:0;letter-spacing:-.5px;}
+  .logo .m1{font-family:'DM Serif Display',serif;font-size:18px;color:var(--acc);letter-spacing:-0.02em;line-height:1.1;}
+  .logo .m2{font-family:'DM Serif Display',serif;font-size:18px;color:var(--tx2);letter-spacing:-0.02em;line-height:1.1;}
+  .logo .sub{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;font-weight:500;}
+  .sidenav{padding:12px 8px;flex:1;}
+  .nl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);padding:0 10px;margin:12px 0 4px;}
+  .ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--tx2);font-size:13px;font-weight:400;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+  .ni:hover{background:var(--bg3);color:var(--tx);}
+  .ni.on{background:var(--bg3);color:var(--acc);font-weight:500;}
+  .ni .ic{font-size:14px;flex-shrink:0;}
+  .sfoot{padding:14px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--tx3);}
+  .mbadge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:3px 9px;border-radius:99px;margin-bottom:8px;}
+  .mb-col{background:var(--blu-bg);color:var(--blu);border:1px solid rgba(6,182,212,.2);}
+  .mb-ges{background:var(--grn-bg);color:var(--acc);border:1px solid rgba(16,185,129,.25);}
+  .author-block{margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr);}
+  .author-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+  .author-av{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#020617;flex-shrink:0;}
+  .author-av.lc{background:var(--acc);}
+  .author-av.ea{background:var(--blu);}
+  .author-name{font-size:11px;font-weight:600;color:var(--tx2);line-height:1.2;}
+  .author-role{font-size:9px;color:var(--tx3);}
+  .author-idea{font-size:9px;color:var(--tx3);margin-top:2px;line-height:1.5;}
+
+  .main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(2,6,23,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);padding:12px 28px;display:flex;align-items:center;gap:12px;}
+  .tc{font-size:12px;color:var(--tx3);}
+  .tt{font-size:15px;font-weight:500;color:var(--tx);}
+  .tsep{color:var(--bdr2);}
+  .tr{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .brand-pill{font-size:10px;color:var(--acc);font-family:'DM Mono',monospace;background:var(--grn-bg);padding:3px 10px;border-radius:6px;border:1px solid var(--bdr2);}
+  .content{padding:26px;flex:1;}
+  .panel{display:none;} .panel.on{display:block;}
+
+  /* HEADER */
+  .ph{margin-bottom:22px;}
+  .ph h1{font-family:'DM Serif Display',serif;font-size:25px;color:var(--tx);letter-spacing:-0.02em;font-weight:400;margin-bottom:3px;}
+  .ph p{color:var(--tx2);font-size:13px;}
+
+  /* SYNC BAR */
+  .syncbar{background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--gry);flex-shrink:0;}
+  .sync-dot.ok{background:var(--acc);}
+  .sync-dot.err{background:var(--red);}
+  .sync-dot.loading{background:var(--ylw);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+  .sync-txt{font-size:12px;color:var(--tx2);flex:1;}
+  .sync-time{font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;}
+
+  /* STATS */
+  .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .sc{background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;padding:15px 17px;}
+  .sl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);font-weight:600;margin-bottom:7px;}
+  .sv{font-family:'DM Mono',monospace;font-size:27px;font-weight:500;line-height:1;color:var(--tx);}
+  .sc.sp .sv{color:var(--grn);} .sc.sv2 .sv{color:var(--red);} .sc.sr .sv{color:var(--ylw);}
+
+  /* FILTERS */
+  .fb{background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;padding:13px 17px;margin-bottom:13px;}
+  .ft{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;margin-bottom:9px;}
+  .fbot{display:flex;gap:8px;align-items:center;}
+  .iw{position:relative;}
+  .iw .ico{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--tx3);pointer-events:none;}
+  .fi,.fs{font-family:'Epilogue',sans-serif;font-size:12px;background:var(--bg4);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);padding:8px 8px 8px 26px;width:100%;outline:none;transition:border-color .15s;}
+  .fs{padding-left:8px;}
+  .fi::placeholder{color:var(--tx3);}
+  .fi:focus,.fs:focus{border-color:var(--acc3);}
+  .ri{margin-left:auto;font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;}
+
+  /* BUTTONS */
+  .btn{font-family:'Epilogue',sans-serif;font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;color:var(--tx2);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+  .btn:hover{background:var(--bg3);color:var(--tx);}
+  .btn-a{background:var(--acc);color:#020617;border-color:transparent;font-weight:600;}
+  .btn-a:hover{background:var(--acc2);color:#020617;}
+  .btn-sm{font-size:11px;padding:5px 10px;}
+  .btn-d{border-color:rgba(239,68,68,.3);color:var(--red);}
+  .btn-d:hover{background:var(--red-bg);}
+  .btn-b{background:var(--blu-bg);color:var(--blu);border-color:rgba(6,182,212,.3);font-weight:600;}
+  .btn-b:hover{background:rgba(6,182,212,.18);}
+
+  /* TABLE */
+  .tw{background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:var(--bg4);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);padding:11px 14px;text-align:left;border-bottom:1px solid var(--bdr);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--bg4);}
+  tbody td{padding:11px 14px;color:var(--tx2);font-size:13px;}
+  .ts{color:var(--tx);font-weight:500;} .tm{font-family:'DM Mono',monospace;font-size:12px;}
+  .er td{text-align:center;padding:48px;color:var(--tx3);font-size:13px;}
+  .mr td{text-align:center;padding:12px;color:var(--tx3);font-size:11px;font-family:'DM Mono',monospace;background:var(--bg4);}
+
+  /* BADGES */
+  .bp{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;display:inline-flex;align-items:center;}
+  .bp-p{background:var(--grn-bg);color:var(--grn);border:1px solid rgba(16,185,129,.2);}
+  .bp-v{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+  .bp-c{background:var(--gry-bg);color:var(--gry);border:1px solid rgba(100,116,139,.2);}
+  .bp-r{background:var(--ylw-bg);color:var(--ylw);border:1px solid rgba(245,158,11,.2);}
+  .bp-f{background:var(--blu-bg);color:var(--blu);border:1px solid rgba(6,182,212,.15);font-size:10px;}
+
+  /* MODAL */
+  .ov{display:none;position:fixed;inset:0;background:rgba(2,6,23,.82);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:24px;}
+  .ov.open{display:flex;}
+  .modal{background:var(--bg2);border:1px solid var(--bdr2);border-radius:16px;width:500px;max-width:100%;max-height:88vh;overflow-y:auto;animation:mIn .17s ease;}
+  @keyframes mIn{from{opacity:0;transform:translateY(8px) scale(.97);}to{opacity:1;transform:none;}}
+  .mh{padding:19px 21px 13px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;position:sticky;top:0;background:var(--bg2);z-index:2;}
+  .mh h2{font-family:'DM Serif Display',serif;font-size:19px;font-weight:400;color:var(--tx);line-height:1.2;}
+  .mh .meta{font-size:12px;color:var(--tx3);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;}
+  .mx{background:var(--bg4);border:none;color:var(--tx2);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+  .mx:hover{background:var(--bg5);color:var(--tx);}
+  .mb2{padding:17px 21px;}
+  .ms{margin-bottom:16px;}
+  .ms h3{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);margin-bottom:7px;display:flex;align-items:center;gap:7px;}
+  .ms h3::after{content:'';flex:1;height:1px;background:var(--bdr);}
+  .mg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .mf{background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;padding:8px 10px;}
+  .mf.full{grid-column:1/-1;}
+  .mf .fl{font-size:10px;color:var(--tx3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em;}
+  .mf .fv{font-size:13px;color:var(--tx);font-weight:500;word-break:break-all;}
+  .mf .fv.mo{font-family:'DM Mono',monospace;font-size:12px;font-weight:400;}
+
+  /* GESTORA — CONFIG SHEETS */
+  .cfg-box{background:var(--bg3);border:1px solid var(--bdr);border-radius:14px;padding:20px;margin-bottom:18px;}
+  .cfg-box h3{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+  .cfg-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-bottom:10px;}
+  .cfg-label{font-size:11px;color:var(--tx3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
+  .cfg-input{font-family:'Epilogue',sans-serif;font-size:12px;background:var(--bg4);border:1px solid var(--bdr2);border-radius:8px;color:var(--tx);padding:9px 12px;width:100%;outline:none;}
+  .cfg-input:focus{border-color:var(--acc3);}
+  .cfg-hint{font-size:11px;color:var(--tx3);margin-top:6px;line-height:1.5;}
+  .cfg-hint a{color:var(--acc);text-decoration:none;}
+  .cfg-hint a:hover{text-decoration:underline;}
+  .steps{counter-reset:step;}
+  .step{counter-increment:step;display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+  .step::before{content:counter(step);width:22px;height:22px;background:var(--acc3);color:#020617;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+  .step p{font-size:12px;color:var(--tx2);line-height:1.6;}
+  .step code{background:var(--bg4);color:var(--acc);padding:1px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;}
+
+  /* UPLOAD */
+  .ur{display:grid;grid-template-columns:1fr 240px;gap:16px;margin-bottom:22px;align-items:start;}
+  .uz{background:var(--bg3);border:2px dashed var(--bdr2);border-radius:14px;padding:26px;text-align:center;cursor:pointer;transition:all .2s;}
+  .uz:hover{background:var(--bg4);border-color:rgba(16,185,129,.4);}
+  .uz.dov{background:var(--bg4);border-color:var(--acc);}
+  .uz input{display:none;}
+  .uico{width:46px;height:46px;background:var(--bg4);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 11px;font-size:20px;}
+  .uz h3{font-size:14px;font-weight:500;color:var(--tx);margin-bottom:3px;}
+  .uz p{font-size:12px;color:var(--tx3);}
+  .uc{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .sf{font-family:'Epilogue',sans-serif;font-size:12px;background:var(--bg4);border:1px solid var(--bdr2);border-radius:8px;color:var(--tx2);padding:7px 10px;cursor:pointer;outline:none;}
+  .sf:focus{border-color:var(--acc3);}
+  .sp2{background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;padding:14px;}
+  .sp2 h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:11px;}
+  .shi{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr);gap:6px;}
+  .shi:last-child{border-bottom:none;}
+  .shn{font-size:12px;font-weight:500;color:var(--tx);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+  .shm{font-size:10px;color:var(--tx3);}
+  .brm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;padding:0;line-height:1;flex-shrink:0;}
+  .brm:hover{color:var(--red);}
+  .es{font-size:12px;color:var(--tx3);text-align:center;padding:12px 0;}
+  .txi{font-family:'Epilogue',sans-serif;font-size:12px;background:var(--bg4);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);padding:8px 11px;outline:none;}
+  .txi:focus{border-color:var(--acc3);}
+  .ig{background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;padding:18px;margin-top:16px;}
+  .ig h3{font-size:13px;font-weight:500;color:var(--tx);margin-bottom:8px;}
+  .cg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+  .ci{background:var(--bg4);border-radius:8px;padding:8px 10px;}
+  .ci .cn{font-family:'DM Mono',monospace;font-size:11px;color:var(--acc);margin-bottom:1px;}
+  .ci .ca{font-size:11px;color:var(--tx3);}
+  .sk{font-size:10px;color:var(--tx3);background:var(--bg4);border-radius:6px;padding:1px 6px;font-family:'DM Mono',monospace;}
+
+  /* LOCK */
+  .ls{display:none;position:fixed;inset:0;background:rgba(2,6,23,.96);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;}
+  .ls.open{display:flex;}
+  .lb{background:var(--bg2);border:1px solid var(--bdr2);border-radius:16px;padding:30px 26px;width:320px;text-align:center;}
+  .lico{font-size:26px;margin-bottom:12px;}
+  .lb h2{font-family:'DM Serif Display',serif;font-size:19px;color:var(--tx);margin-bottom:5px;font-weight:400;}
+  .lb p{font-size:12px;color:var(--tx3);margin-bottom:18px;}
+  .li{font-family:'Epilogue',sans-serif;font-size:14px;background:var(--bg4);border:1px solid var(--bdr2);border-radius:8px;color:var(--tx);padding:10px 14px;width:100%;outline:none;text-align:center;letter-spacing:.1em;margin-bottom:10px;}
+  .li:focus{border-color:var(--acc3);}
+  .le{font-size:12px;color:var(--red);margin-bottom:8px;min-height:16px;}
+  .lc{font-size:12px;color:var(--tx3);background:none;border:none;cursor:pointer;margin-top:8px;}
+  .lc:hover{color:var(--tx2);}
+
+  /* TOAST */
+  .tw2{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px;}
+  .toast{background:var(--bg3);border:1px solid var(--bdr2);border-radius:10px;padding:10px 13px;font-size:13px;color:var(--tx);min-width:190px;animation:tIn .2s ease;display:flex;align-items:center;gap:8px;}
+  .toast.ts2{border-color:rgba(16,185,129,.3);}
+  .toast.te{border-color:rgba(239,68,68,.3);}
+  .toast.tw3{border-color:rgba(245,158,11,.3);}
+  @keyframes tIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
+
+  @media(max-width:860px){
+    .sidebar{display:none;}.main{margin-left:0;}
+    .sg{grid-template-columns:repeat(2,1fr);}
+    .ft{grid-template-columns:1fr 1fr;}
+    .ur{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-row">
+        <div class="logo-icon">iG</div>
+        <div>
+          <div class="m1">iGreen</div>
+          <div class="m2">Energy</div>
+        </div>
+      </div>
+      <div class="sub">Central de Boletos</div>
+    </div>
+    <nav class="sidenav">
+      <div class="nl">Consulta</div>
+      <button class="ni on" onclick="goPanel('busca',this)"><span class="ic">⊞</span>Buscar boletos</button>
+      <div class="nl" id="nlg" style="display:none">Gestora</div>
+      <button class="ni" id="nCfg" style="display:none" onclick="goPanel('configurar',this)"><span class="ic">⚙</span>Configurar Sheets</button>
+      <button class="ni" id="nImp" style="display:none" onclick="goPanel('importar',this)"><span class="ic">↑</span>Importar planilha</button>
+      <button class="ni" id="nFor" style="display:none" onclick="goPanel('fornecedoras',this)"><span class="ic">◈</span>Fornecedoras</button>
+      <button class="ni" id="nClr" style="display:none" onclick="confirmClear()"><span class="ic">○</span>Limpar base local</button>
+    </nav>
+    <div class="sfoot">
+      <div class="mbadge mb-col" id="mbd">● Colaborador</div>
+      <div style="margin-bottom:3px;">Boletos na base</div>
+      <div style="font-family:'DM Mono',monospace;" id="sbTot">0 registros</div>
+      <button class="ni" style="margin-top:9px;font-size:11px;padding:6px 8px;" onclick="handleMode()">
+        <span class="ic">⚿</span><span id="mLabel">Acesso restrito</span>
+      </button>
+      <!-- AUTORIA -->
+      <div class="author-block">
+        <div class="author-row">
+          <div class="author-av lc">LC</div>
+          <div>
+            <div class="author-name">🎩 Lucas Coutinho</div>
+            <div class="author-role">Desenvolvedor</div>
+          </div>
+        </div>
+        <div class="author-row">
+          <div class="author-av ea">EA</div>
+          <div>
+            <div class="author-name">Emile Angelim</div>
+            <div class="author-role">Diretora · IVOLT</div>
+          </div>
+        </div>
+        <div class="author-idea">Idealizado por<br><span style="color:var(--acc);font-weight:600;">Emily Arduvini</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="tc" id="tCrumb">Consulta</span>
+      <span class="tsep">/</span>
+      <span class="tt" id="tTitle">Buscar boletos</span>
+      <div class="tr">
+        <button class="btn btn-sm" onclick="syncFromSheets()" id="btnSync" title="Sincronizar com Google Sheets">↻ Sincronizar</button>
+        <span class="brand-pill">⚡ iGreen Energy</span>
+        <span style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;" id="tDate"></span>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- BUSCA -->
+      <div class="panel on" id="panel-busca">
+        <div class="ph">
+          <h1>Busca de boletos</h1>
+          <p>Dados sincronizados com o Google Sheets da iGreen Energy — atualize para ver as últimas importações</p>
+        </div>
+        <!-- SYNC STATUS -->
+        <div class="syncbar" id="syncBar">
+          <div class="sync-dot" id="syncDot"></div>
+          <span class="sync-txt" id="syncTxt">Nenhuma sincronização realizada ainda. Clique em <strong>↻ Sincronizar</strong> para carregar os dados.</span>
+          <span class="sync-time" id="syncTime"></span>
+          <button class="btn btn-sm" onclick="syncFromSheets()">↻ Sincronizar</button>
+        </div>
+        <div class="sg">
+          <div class="sc"><div class="sl">Total na base</div><div class="sv" id="sTotal">0</div></div>
+          <div class="sc sp"><div class="sl">Pagos</div><div class="sv" id="sPago">0</div></div>
+          <div class="sc sv2"><div class="sl">Vencidos</div><div class="sv" id="sVenc">0</div></div>
+          <div class="sc sr"><div class="sl">A receber</div><div class="sv" id="sRec">0</div></div>
+        </div>
+        <div class="fb">
+          <div class="ft">
+            <div class="iw"><span class="ico">⊘</span><input class="fi" id="fCli" type="text" placeholder="Buscar por nome do cliente..." oninput="applyFilters()"/></div>
+            <div class="iw"><span class="ico">#</span><input class="fi" id="fInst" type="text" placeholder="N° instalação..." oninput="applyFilters()"/></div>
+            <select class="fs" id="fForn" onchange="applyFilters()"><option value="">Todas fornecedoras</option></select>
+            <select class="fs" id="fStat" onchange="applyFilters()">
+              <option value="">Todos os status</option>
+              <option>Pago</option><option>Vencido</option><option>A receber</option><option>Cancelado</option>
+            </select>
+            <select class="fs" id="fMes" onchange="applyFilters()">
+              <option value="">Todos os meses</option>
+              <option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option>
+              <option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option>
+              <option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+            </select>
+          </div>
+          <div class="fbot">
+            <button class="btn btn-sm" onclick="clearFilters()">Limpar filtros</button>
+            <span class="ri" id="rCount"></span>
+          </div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Cliente</th><th>Instalação</th><th>Fornecedora</th><th>Mês ref.</th><th>Vencimento</th><th>Pagamento</th><th>Status</th><th>Valor</th></tr></thead>
+          <tbody id="tBody"><tr class="er"><td colspan="8">Clique em ↻ Sincronizar para carregar os dados do Google Sheets</td></tr></tbody>
+        </table></div>
+      </div>
+
+      <!-- CONFIGURAR SHEETS (só gestora) -->
+      <div class="panel" id="panel-configurar">
+        <div class="ph"><h1>Configurar Google Sheets</h1><p>Configure a planilha central onde os dados ficam armazenados e são compartilhados com todos os colaboradores</p></div>
+
+        <div class="cfg-box">
+          <h3>📋 Como configurar — passo a passo</h3>
+          <div class="steps">
+            <div class="step"><p>Acesse <a href="https://sheets.google.com" target="_blank" style="color:var(--acc);">sheets.google.com</a> e crie uma nova planilha. Dê o nome <strong>"Central Boletos iGreen"</strong>.</p></div>
+            <div class="step"><p>Na planilha, vá em <strong>Extensões → Apps Script</strong> e cole o código do Web App que está logo abaixo. Salve e clique em <strong>Implantar → Novo deployment → App da Web</strong>.</p></div>
+            <div class="step"><p>Em "Quem tem acesso", selecione <strong>"Qualquer pessoa"</strong>. Clique em Implantar e copie a <strong>URL do Web App</strong> gerada.</p></div>
+            <div class="step"><p>Cole a URL abaixo no campo <strong>URL do Web App</strong> e clique em Salvar. Pronto — todos os colaboradores verão os dados ao clicar em Sincronizar.</p></div>
+            <div class="step"><p>Para compartilhar com colaboradores: publique este arquivo HTML no <a href="https://pages.github.com" target="_blank" style="color:var(--acc);">GitHub Pages</a> e envie o link. Nenhuma instalação necessária.</p></div>
+          </div>
+        </div>
+
+        <div class="cfg-box">
+          <h3>⚙ URL do Web App (Google Apps Script)</h3>
+          <div class="cfg-row">
+            <div>
+              <div class="cfg-label">Cole aqui a URL do seu Web App</div>
+              <input class="cfg-input" id="cfgUrl" type="text" placeholder="https://script.google.com/macros/s/XXXXXXX/exec"/>
+            </div>
+            <button class="btn btn-a" onclick="saveConfig()">Salvar</button>
+          </div>
+          <div class="cfg-hint">
+            A URL fica salva localmente nesta máquina. Todos os colaboradores que usarem o link do GitHub Pages precisarão que a gestora configure a URL no primeiro acesso da máquina deles — ou você pode fixar a URL diretamente no código.<br><br>
+            <strong style="color:var(--acc);">Dica rápida:</strong> após salvar, clique em <strong>↻ Sincronizar</strong> na barra superior para testar a conexão.
+          </div>
+        </div>
+
+        <div class="cfg-box">
+          <h3>📄 Código do Apps Script — copie e cole no Google Sheets</h3>
+          <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--acc2);line-height:1.7;white-space:pre-wrap;overflow-x:auto;" id="scriptCode"></div>
+          <button class="btn btn-sm" style="margin-top:10px;" onclick="copyScript()">📋 Copiar código</button>
+        </div>
+      </div>
+
+      <!-- IMPORTAR -->
+      <div class="panel" id="panel-importar">
+        <div class="ph"><h1>Importar planilha</h1><p>Importe a planilha da fornecedora. Os dados são enviados ao Google Sheets e ficam disponíveis para todos os colaboradores.</p></div>
+        <div class="ur">
+          <div class="uz" id="uzOne">
+            <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" multiple/>
+            <div class="uico">📂</div>
+            <h3>Arraste o arquivo aqui</h3>
+            <p>Suporte a .xlsx, .xls e .csv</p>
+            <div class="uc">
+              <select class="sf" id="fornImp"><option value="">Selecione a fornecedora</option></select>
+              <button class="btn btn-a" onclick="triggerUpload()">Selecionar arquivo</button>
+            </div>
+          </div>
+          <div class="sp2">
+            <h3>Planilhas importadas</h3>
+            <div id="sheetsCont"><div class="es">Nenhuma planilha ainda</div></div>
+          </div>
+        </div>
+        <div class="ig">
+          <h3>Colunas reconhecidas automaticamente</h3>
+          <p style="font-size:12px;color:var(--tx3);margin-bottom:11px;">Variações de nome são aceitas. Colunas extras também aparecem nos detalhes do boleto.</p>
+          <div class="cg" id="colGrid"></div>
+        </div>
+      </div>
+
+      <!-- FORNECEDORAS -->
+      <div class="panel" id="panel-fornecedoras">
+        <div class="ph"><h1>Fornecedoras</h1><p>Cadastre as fornecedoras disponíveis para importação</p></div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <input class="txi" id="novaForn" type="text" placeholder="Nome da nova fornecedora..." style="max-width:270px;"/>
+          <button class="btn btn-a" onclick="addForn()">+ Adicionar</button>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Fornecedora</th><th>Boletos</th><th>Planilhas</th><th></th></tr></thead>
+          <tbody id="fornBody"><tr class="er"><td colspan="4">Nenhuma fornecedora cadastrada</td></tr></tbody>
+        </table></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="ov" id="detailOv" onclick="ovClick(event)">
+  <div class="modal">
+    <div class="mh">
+      <div><h2 id="mTitle"></h2><div class="meta" id="mMeta"></div></div>
+      <button class="mx" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mb2" id="mBody"></div>
+  </div>
+</div>
+
+<!-- LOCK SCREEN -->
+<div class="ls" id="lockSc">
+  <div class="lb">
+    <div class="lico">⚿</div>
+    <h2>Acesso restrito</h2>
+    <p>Digite a senha para acessar a área da gestora</p>
+    <input class="li" type="password" id="lockIn" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryUnlock()"/>
+    <div class="le" id="lockErr"></div>
+    <button class="btn btn-a" style="width:100%;justify-content:center;" onclick="tryUnlock()">Entrar</button>
+    <button class="lc" onclick="closeLock()">Cancelar</button>
+  </div>
+</div>
+
+<div class="tw2" id="toastWrap"></div>
+
+<script>
+/* =========================================================
+   CONFIG — altere as senhas aqui
+   ========================================================= */
+const SENHA_LUCAS  = 'lucas2025';   // senha do Lucas
+const SENHA_EMILY  = 'emily2025';   // senha da Emily Arduvini
+const SENHA_EMILE  = 'ivolt2025';   // senha da Emile Angelim (IVOLT)
+
+// URL do Web App do Google Apps Script
+// Pode ser preenchida aqui diretamente (recomendado após configurar)
+// ou via painel de configuração dentro do sistema
+let WEBAPP_URL = '';
+
+/* =========================================================
+   CÓDIGO DO APPS SCRIPT — será exibido no painel
+   ========================================================= */
+const APPS_SCRIPT_CODE = `// ============================================
+// Central de Boletos iGreen — Apps Script
+// Cole este código no Google Apps Script
+// Extensões > Apps Script > Cole > Salvar
+// Depois: Implantar > App da Web > Qualquer pessoa
+// ============================================
+
+const SHEET_NAME = 'Boletos';
+
+function doGet(e) {
+  const action = e.parameter.action || 'read';
+  if (action === 'read') return readData();
+  return ContentService.createTextOutput(JSON.stringify({ok:false,msg:'ação desconhecida'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    if (payload.action === 'write') return writeData(payload.rows);
+    if (payload.action === 'clear') return clearData();
+    return ContentService.createTextOutput(JSON.stringify({ok:false,msg:'ação desconhecida'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false,msg:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function readData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) {
+    return ContentService.createTextOutput(JSON.stringify({ok:true,rows:[]}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const rows = data.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+  return ContentService.createTextOutput(JSON.stringify({ok:true,rows}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function writeData(rows) {
+  if (!rows || !rows.length) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false,msg:'sem dados'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  
+  const HEADERS = ['_id','fornecedora','cliente','instalacao','status',
+    'vencimento','emissao','pagamento','mes','valor','nosso_numero','linha_digitavel'];
+
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(HEADERS);
+    // Formatar cabeçalho
+    const hRange = sheet.getRange(1, 1, 1, HEADERS.length);
+    hRange.setBackground('#1E293B').setFontColor('#10B981').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+
+  // Pegar IDs existentes para dedup
+  const lastRow = sheet.getLastRow();
+  let existingIds = new Set();
+  if (lastRow > 1) {
+    const idCol = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    idCol.forEach(r => existingIds.add(String(r[0])));
+  }
+
+  const newRows = rows.filter(r => !existingIds.has(String(r._id || '')));
+  if (!newRows.length) {
+    return ContentService.createTextOutput(JSON.stringify({ok:true,added:0,msg:'todos já existem'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const toWrite = newRows.map(r => HEADERS.map(h => r[h] || ''));
+  sheet.getRange(sheet.getLastRow() + 1, 1, toWrite.length, HEADERS.length).setValues(toWrite);
+
+  return ContentService.createTextOutput(JSON.stringify({ok:true,added:newRows.length}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function clearData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (sheet && sheet.getLastRow() > 1) {
+    sheet.deleteRows(2, sheet.getLastRow() - 1);
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok:true,msg:'base limpa'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let allRec=[], filtered=[], sheets=[], forns=[], isGes=false, curRec=null;
+
+/* =========================================================
+   COLUMN MAP
+   ========================================================= */
+const CM = {
+  cliente:['cliente','nome cliente','nome do cliente','nome_cliente','consorciado','nome consorciado','parceiro','nome parceiro','sacado','nome sacado','devedor','beneficiario','beneficiário','titular','nome titular','razao social','razão social','nome','name','consumidor','associado','contratante','usuario','usuário'],
+  instalacao:['instalacao','instalação','numero instalacao','número instalação','cod instalacao','nro instalacao','numero_instalacao','codigo instalacao','num instalacao','unidade consumidora','unidade_consumidora','uc','cod uc','num uc','ponto de entrega','contrato','numero contrato','num contrato','matricula','matrícula'],
+  status:['status','status fatura','status_fatura','status da fatura','status pagamento','status_pagamento','status do envio','status_do_envio','situacao','situação','situacao fatura','situação fatura','situacao pagamento','estado fatura','estado_fatura','posicao','posição','condicao','condição'],
+  vencimento:['vencimento','data vencimento','data de vencimento','dt vencimento','vencto','dt_vencimento','data_vencimento','prazo pagamento','data limite'],
+  emissao:['emissao','emissão','data emissao','data de emissão','dt emissao','data_emissao','data emissão','data geracao','data geração','data criacao','data criação'],
+  pagamento:['pagamento','data pagamento','data de pagamento','dt pagamento','dt_pagamento','data_pagamento','data quitacao','data quitação','data liquidacao','data liquidação','data baixa'],
+  mes:['mes referencia','mês referência','mes ref','mês ref','mes','mês','referencia','referência','periodo','período','competencia','competência','ciclo','fatura ref'],
+  valor:['valor','valor boleto','valor fatura','vlr','total','montante','valor total','valor_boleto','valor_fatura','vl fatura','valor parcela','importancia','valor cobrado','valor a pagar'],
+  nosso_numero:['nosso numero','nosso número','numero boleto','número boleto','cod boleto','codigo boleto','id boleto','nosso_numero','num boleto','identificador','id fatura','num fatura','numero fatura'],
+  linha_digitavel:['linha digitavel','linha digitável','codigo de barras','código de barras','barcode','cod barras','linha_digitavel','codigobarras'],
+};
+const CL={cliente:'Cliente',instalacao:'Instalação',status:'Status',vencimento:'Vencimento',emissao:'Emissão',pagamento:'Pagamento',mes:'Mês ref.',valor:'Valor',nosso_numero:'Nosso número',linha_digitavel:'Linha digitável'};
+const CA={
+  cliente:'consorciado, parceiro, sacado, titular, beneficiário, razão social',
+  instalacao:'número instalação, unidade consumidora, UC, matrícula, contrato',
+  status:'status_pagamento, status_do_envio, situação, estado_pagamento',
+  vencimento:'data vencimento, dt vencimento, prazo pagamento, data limite',
+  emissao:'data emissão, dt emissão, data geração, data criação',
+  pagamento:'data pagamento, data quitação, data liquidação, data baixa',
+  mes:'mês referência, período, competência, ciclo, fatura ref',
+  valor:'valor boleto, valor fatura, vl fatura, valor a pagar, valor cobrado',
+  nosso_numero:'número boleto, cod boleto, id fatura, num fatura',
+  linha_digitavel:'código de barras, barcode, representação numérica',
+};
+
+/* =========================================================
+   INIT
+   ========================================================= */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('tDate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('scriptCode').textContent=APPS_SCRIPT_CODE;
+  renderColGrid();
+  loadStorage();
+  applyFilters();
+  renderFornTable();
+  syncSelects();
+  // Mostrar botão sync sempre
+  document.getElementById('btnSync').style.display='inline-flex';
+});
+
+/* =========================================================
+   STORAGE LOCAL (cache + config)
+   ========================================================= */
+function loadStorage(){
+  try{
+    const d=localStorage.getItem('ig_cb3');
+    if(d){const p=JSON.parse(d);allRec=p.r||[];sheets=p.s||[];forns=p.f||[];}
+    const url=localStorage.getItem('ig_webapp_url');
+    if(url){WEBAPP_URL=url;document.getElementById('cfgUrl').value=url;}
+  }catch(e){}
+}
+function save(){
+  try{localStorage.setItem('ig_cb3',JSON.stringify({r:allRec,s:sheets,f:forns}));}catch(e){}
+}
+function saveConfig(){
+  const url=document.getElementById('cfgUrl').value.trim();
+  if(!url){toast('Cole a URL do Web App primeiro.','e');return;}
+  if(!url.includes('script.google.com')){toast('URL inválida. Deve ser do Google Apps Script.','e');return;}
+  WEBAPP_URL=url;
+  localStorage.setItem('ig_webapp_url',url);
+  toast('URL salva! Clique em ↻ Sincronizar para testar.','s');
+}
+function copyScript(){
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(()=>toast('Código copiado!','s')).catch(()=>toast('Copie manualmente o código acima.','w'));
+}
+
+/* =========================================================
+   SYNC — Google Sheets via Web App
+   ========================================================= */
+async function syncFromSheets(){
+  if(!WEBAPP_URL){
+    toast('Configure a URL do Web App primeiro (menu Gestora → Configurar Sheets).','e');
+    setSyncStatus('err','URL do Web App não configurada.');
+    return;
+  }
+  setSyncStatus('loading','Sincronizando com Google Sheets...');
+  document.getElementById('btnSync').disabled=true;
+  try{
+    const res=await fetch(WEBAPP_URL+'?action=read',{method:'GET'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.msg||'erro desconhecido');
+    const rows=json.rows||[];
+    if(!rows.length){
+      setSyncStatus('ok','Planilha conectada — nenhum registro ainda.');
+      toast('Conectado! A planilha ainda não tem dados.','w');
+      document.getElementById('btnSync').disabled=false;
+      return;
+    }
+    // Converter linhas do Sheets para o formato interno
+    allRec=rows.map((row,i)=>({
+      _id:row._id||`gs_${i}_${Date.now()}`,
+      _raw:row, _headers:Object.keys(row),
+      fornecedora:row.fornecedora||'',
+      cliente:row.cliente||'Não informado',
+      instalacao:row.instalacao||'',
+      status:row.status||'A receber',
+      vencimento:row.vencimento||'',
+      emissao:row.emissao||'',
+      pagamento:row.pagamento||'',
+      mes:row.mes||'',
+      valor:row.valor||'',
+      nosso_numero:row.nosso_numero||'',
+      linha_digitavel:row.linha_digitavel||'',
+    }));
+    // Atualizar fornecedoras a partir dos dados
+    const fornList=[...new Set(allRec.map(r=>r.fornecedora).filter(Boolean))];
+    fornList.forEach(f=>{if(!forns.includes(f))forns.push(f);});
+    save();syncSelects();applyFilters();renderFornTable();
+    const now=new Date().toLocaleTimeString('pt-BR');
+    setSyncStatus('ok',`${allRec.length} boletos carregados do Google Sheets`);
+    document.getElementById('syncTime').textContent='Última sync: '+now;
+    toast(`✓ ${allRec.length} boletos sincronizados com sucesso!`,'s');
+  }catch(err){
+    setSyncStatus('err','Falha na sincronização: '+err.message);
+    toast('Erro ao conectar com o Google Sheets. Verifique a URL.','e');
+  }
+  document.getElementById('btnSync').disabled=false;
+}
+
+async function pushToSheets(newRecs){
+  if(!WEBAPP_URL){toast('Configure a URL do Web App para sincronizar.','e');return false;}
+  try{
+    const res=await fetch(WEBAPP_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'write',rows:newRecs}),
+    });
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.msg||'erro');
+    toast(`${json.added} registros enviados ao Google Sheets ✓`,'s');
+    return true;
+  }catch(err){
+    toast('Erro ao enviar para o Sheets: '+err.message,'e');
+    return false;
+  }
+}
+
+function setSyncStatus(state,msg){
+  const dot=document.getElementById('syncDot');
+  const txt=document.getElementById('syncTxt');
+  dot.className='sync-dot'+(state?' '+state:'');
+  txt.innerHTML=msg;
+}
+
+/* =========================================================
+   MODE (login)
+   ========================================================= */
+function handleMode(){isGes?exitGes():openLock();}
+function openLock(){
+  document.getElementById('lockIn').value='';
+  document.getElementById('lockErr').textContent='';
+  document.getElementById('lockSc').classList.add('open');
+  setTimeout(()=>document.getElementById('lockIn').focus(),80);
+}
+function closeLock(){document.getElementById('lockSc').classList.remove('open');}
+function tryUnlock(){
+  const val=document.getElementById('lockIn').value;
+  if(val===SENHA_LUCAS||val===SENHA_EMILY||val===SENHA_EMILE){
+    closeLock();
+    const who=val===SENHA_LUCAS?'🎩 Lucas':val===SENHA_EMILY?'Emily Arduvini':'Emile Angelim';
+    enterGes(who);
+  }else{
+    document.getElementById('lockErr').textContent='Senha incorreta.';
+    document.getElementById('lockIn').value='';
+    document.getElementById('lockIn').focus();
+  }
+}
+function enterGes(who){
+  isGes=true;
+  ['nlg','nCfg','nImp','nFor','nClr'].forEach(id=>document.getElementById(id).style.display='');
+  document.getElementById('mbd').className='mbadge mb-ges';
+  document.getElementById('mbd').textContent='● Gestora';
+  document.getElementById('mLabel').textContent='Sair da área restrita';
+  toast(`Bem-vinda(o), ${who||'gestora'} ⚡`,'s');
+}
+function exitGes(){
+  isGes=false;
+  ['nlg','nCfg','nImp','nFor','nClr'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('mbd').className='mbadge mb-col';
+  document.getElementById('mbd').textContent='● Colaborador';
+  document.getElementById('mLabel').textContent='Acesso restrito';
+  goPanel('busca',document.querySelector('.ni'));
+  toast('Sessão encerrada.','s');
+}
+
+/* =========================================================
+   PANELS
+   ========================================================= */
+function goPanel(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('panel-'+id).classList.add('on');
+  if(btn)btn.classList.add('on');
+  const T={busca:'Buscar boletos',configurar:'Configurar Sheets',importar:'Importar planilha',fornecedoras:'Fornecedoras'};
+  const C={busca:'Consulta',configurar:'Gestora',importar:'Gestora',fornecedoras:'Gestora'};
+  document.getElementById('tTitle').textContent=T[id]||id;
+  document.getElementById('tCrumb').textContent=C[id]||'';
+  if(id==='importar')renderSheets();
+  if(id==='fornecedoras')renderFornTable();
+}
+
+/* =========================================================
+   UPLOAD / IMPORTAR
+   ========================================================= */
+function triggerUpload(){
+  const f=document.getElementById('fornImp').value;
+  if(!f){toast('Selecione a fornecedora antes de importar.','e');return;}
+  document.getElementById('fileIn').click();
+}
+const uz=document.getElementById('uzOne');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('dov');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('dov'));
+uz.addEventListener('drop',e=>{
+  e.preventDefault();uz.classList.remove('dov');
+  const f=document.getElementById('fornImp').value;
+  if(!f){toast('Selecione a fornecedora antes de importar.','e');return;}
+  [...e.dataTransfer.files].forEach(fi=>processFile(fi,f));
+});
+document.getElementById('fileIn').addEventListener('change',e=>{
+  const f=document.getElementById('fornImp').value;
+  [...e.target.files].forEach(fi=>processFile(fi,f));
+  e.target.value='';
+});
+
+function processFile(file,forn){
+  const reader=new FileReader();
+  reader.onload=async evt=>{
+    try{
+      const wb=XLSX.read(evt.target.result,{type:'binary',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!raw.length){toast('Planilha vazia ou formato não reconhecido.','e');return;}
+      const headers=Object.keys(raw[0]);
+      const sampleRows=raw.slice(0,20);
+      const cm={};
+      for(const[field,aliases]of Object.entries(CM)) cm[field]=matchCol(headers,aliases);
+      if(!cm.cliente) cm.cliente=smartFallback('cliente',headers,sampleRows);
+      if(!cm.status)  cm.status =smartFallback('status',headers,sampleRows);
+      const recs=raw.map((row,i)=>{
+        const g=f=>cm[f]?row[cm[f]]:'';
+        const status=resolveStatus(g('status'));
+        return{
+          _id:`${Date.now()}_${i}_${Math.random().toString(36).slice(2)}`,
+          _raw:row,_headers:headers,fornecedora:forn,
+          cliente:String(g('cliente')||'').trim()||'Não informado',
+          instalacao:g('instalacao')||'',status,
+          vencimento:fmtD(g('vencimento')),emissao:fmtD(g('emissao')),
+          pagamento:fmtD(g('pagamento')),mes:g('mes')||'',
+          valor:fmtV(g('valor')),nosso_numero:g('nosso_numero')||'',
+          linha_digitavel:String(g('linha_digitavel')||''),
+        };
+      });
+      const{clean,skipped}=dedup(recs);
+      if(!clean.length){toast(`Todos os ${skipped} boletos já estão na base.`,'w');return;}
+      // Enviar para Google Sheets primeiro
+      toast(`Enviando ${clean.length} registros ao Google Sheets...`,'w');
+      const sent=await pushToSheets(clean);
+      // Salvar local também
+      allRec=[...allRec,...clean];
+      sheets.push({name:file.name,forn,count:clean.length,skipped,date:new Date().toLocaleDateString('pt-BR')});
+      if(!forns.includes(forn))forns.push(forn);
+      save();syncSelects();renderSheets();renderFornTable();applyFilters();
+      if(sent){
+        toast(`${clean.length} boletos importados e enviados ao Sheets ✓`,'s');
+      }else{
+        toast(`${clean.length} boletos salvos localmente. Sheets não atualizado.`,'w');
+      }
+    }catch(err){toast('Erro ao ler o arquivo. Verifique o formato.','e');}
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* =========================================================
+   DEDUP
+   ========================================================= */
+function mkFP(row){return Object.values(row).map(v=>norm(String(v))).join('||');}
+function mkKH(r){return[norm(r.cliente),norm(r.instalacao),norm(r.mes),norm(r.valor)].join('|');}
+function dedup(newRecs){
+  const eFP=new Set(allRec.map(r=>mkFP(r._raw)));
+  const eKH=new Set(allRec.map(r=>mkKH(r)));
+  const eNN=new Set(allRec.filter(r=>r.nosso_numero).map(r=>norm(r.nosso_numero)));
+  const eLD=new Set(allRec.filter(r=>r.linha_digitavel).map(r=>norm(r.linha_digitavel)));
+  const bFP=new Set(),bKH=new Set(),bNN=new Set(),bLD=new Set();
+  const clean=[],skip=[];
+  for(const r of newRecs){
+    const fp=mkFP(r._raw),kh=mkKH(r);
+    const nn=r.nosso_numero?norm(r.nosso_numero):null;
+    const ld=r.linha_digitavel?norm(r.linha_digitavel):null;
+    const dup=eFP.has(fp)||bFP.has(fp)||(nn&&(eNN.has(nn)||bNN.has(nn)))||(ld&&(eLD.has(ld)||bLD.has(ld)))||eKH.has(kh)||bKH.has(kh);
+    if(dup){skip.push(r);}else{clean.push(r);bFP.add(fp);bKH.add(kh);if(nn)bNN.add(nn);if(ld)bLD.add(ld);}
+  }
+  return{clean,skipped:skip.length};
+}
+
+/* =========================================================
+   UTILS
+   ========================================================= */
+function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
+function matchCol(headers,aliases){
+  for(const a of aliases) for(const h of headers) if(norm(h)===norm(a)) return h;
+  for(const a of aliases) for(const h of headers) if(norm(h).includes(norm(a))) return h;
+  for(const a of aliases) for(const h of headers){const nh=norm(h),na=norm(a);if(nh.length>=3&&na.includes(nh))return h;}
+  return null;
+}
+function smartFallback(field,headers,sampleRows){
+  if(field==='cliente'){
+    for(const h of headers){
+      if(/id|cod|num|data|valor|vl|dt|status|ref|mes|inst|uc|cnpj|cpf|cep|end|tel|email/i.test(norm(h)))continue;
+      const vals=sampleRows.map(r=>String(r[h]||'')).filter(v=>v.length>2);
+      const namelike=vals.filter(v=>/^[a-záàâãéèêíïóôõöúüçñ\s]+$/i.test(v.trim()));
+      if(namelike.length/Math.max(vals.length,1)>0.5)return h;
+    }
+  }
+  if(field==='status'){
+    const sk=/pago|liquidado|quitado|vencido|atraso|cancelado|pendente|aberto|receber|enviado|em dia|baixado|processado|aprovado|rejeitado|inadimplente/i;
+    for(const h of headers){
+      const vals=sampleRows.map(r=>String(r[h]||'')).filter(v=>v.length>0);
+      if(vals.filter(v=>sk.test(v)).length/Math.max(vals.length,1)>0.3)return h;
+    }
+  }
+  return null;
+}
+function resolveStatus(raw){
+  const s=norm(String(raw||''));
+  if(!s)return'A receber';
+  if(/\bpago\b|liquidado|quitado|baixado|paga\b|pgto|pg\b|quitada|liquidada/.test(s))return'Pago';
+  if(/em\s*dia|adimplente|regular|aprovado|processado/.test(s))return'Pago';
+  if(/cancelado|cancelada|cancel|estornado|anulado/.test(s))return'Cancelado';
+  if(/vencido|vencida|atraso|atrasado|inadimplente|nao\s*pago/.test(s))return'Vencido';
+  if(/pendente|aberto|aberta|a\s*receber|enviado|emitido|aguardando|em\s*aberto|gerado|registrado/.test(s))return'A receber';
+  return'A receber';
+}
+function fmtD(v){
+  if(!v)return'';if(v instanceof Date)return v.toLocaleDateString('pt-BR');
+  const s=String(v).trim();
+  if(/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s))return s;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){const d=new Date(s);return isNaN(d)?s:d.toLocaleDateString('pt-BR');}
+  return s;
+}
+function fmtV(v){
+  if(!v&&v!==0)return'';
+  const n=parseFloat(String(v).replace(/[^0-9,.-]/g,'').replace(',','.'));
+  if(isNaN(n))return String(v);
+  return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+function applyFilters(){
+  const q=norm(document.getElementById('fCli').value);
+  const inst=norm(document.getElementById('fInst').value);
+  const forn=document.getElementById('fForn').value;
+  const stat=document.getElementById('fStat').value;
+  const mes=norm(document.getElementById('fMes').value);
+  filtered=allRec.filter(r=>
+    (!q||norm(r.cliente).includes(q))&&
+    (!inst||norm(r.instalacao).includes(inst))&&
+    (!forn||r.fornecedora===forn)&&
+    (!stat||r.status===stat)&&
+    (!mes||norm(r.mes).includes(mes))
+  );
+  updStats();renderTable();
+  document.getElementById('sbTot').textContent=allRec.length+' registros';
+}
+function clearFilters(){
+  ['fCli','fInst'].forEach(id=>document.getElementById(id).value='');
+  ['fForn','fStat','fMes'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+}
+
+/* =========================================================
+   STATS
+   ========================================================= */
+function updStats(){
+  document.getElementById('sTotal').textContent=allRec.length;
+  document.getElementById('sPago').textContent=filtered.filter(r=>r.status==='Pago').length;
+  document.getElementById('sVenc').textContent=filtered.filter(r=>r.status==='Vencido').length;
+  document.getElementById('sRec').textContent=filtered.filter(r=>r.status==='A receber').length;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+function renderTable(){
+  const tb=document.getElementById('tBody');
+  document.getElementById('rCount').textContent=allRec.length?`${filtered.length} resultado${filtered.length!==1?'s':''}`:'' ;
+  if(!filtered.length){
+    tb.innerHTML=`<tr class="er"><td colspan="8">${allRec.length?'Nenhum boleto encontrado para esses filtros.':'Clique em ↻ Sincronizar para carregar os dados do Google Sheets'}</td></tr>`;
+    return;
+  }
+  const sb=s=>({Pago:'bp-p',Vencido:'bp-v',Cancelado:'bp-c','A receber':'bp-r'})[s]||'bp-c';
+  tb.innerHTML=filtered.slice(0,300).map(r=>`
+    <tr onclick="openModal('${r._id}')">
+      <td class="ts">${esc(r.cliente)}</td>
+      <td class="tm">${esc(r.instalacao)||'—'}</td>
+      <td><span class="bp bp-f">${esc(r.fornecedora)}</span></td>
+      <td>${esc(r.mes)||'—'}</td>
+      <td class="tm">${esc(r.vencimento)||'—'}</td>
+      <td class="tm">${esc(r.pagamento)||'—'}</td>
+      <td><span class="bp ${sb(r.status)}">${r.status}</span></td>
+      <td class="ts tm">${esc(r.valor)||'—'}</td>
+    </tr>`).join('')+
+    (filtered.length>300?`<tr class="mr"><td colspan="8">Exibindo 300 de ${filtered.length} — refine os filtros para ver mais</td></tr>`:'');
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+function openModal(id){
+  const r=allRec.find(x=>x._id===id);if(!r)return;curRec=r;
+  document.getElementById('mTitle').textContent=r.cliente;
+  const sc=s=>({Pago:'bp-p',Vencido:'bp-v',Cancelado:'bp-c','A receber':'bp-r'})[s]||'bp-c';
+  document.getElementById('mMeta').innerHTML=`<span class="bp bp-f" style="font-size:10px;">${esc(r.fornecedora)}</span><span class="bp ${sc(r.status)}">${r.status}</span>`;
+  const f=(label,val,full,mono)=>!val?'':`<div class="mf${full?' full':''}"><div class="fl">${label}</div><div class="fv${mono?' mo':''}">${esc(val)}</div></div>`;
+  const extras=(r._headers||[]).filter(h=>{const n=norm(h);return!Object.values(CM).flat().some(a=>norm(a)===n||n.includes(norm(a)));});
+  document.getElementById('mBody').innerHTML=`
+    <div class="ms"><h3>Cliente</h3><div class="mg">${f('Nome completo',r.cliente)}${f('N° instalação',r.instalacao,false,true)}</div></div>
+    <div class="ms"><h3>Boleto</h3><div class="mg">
+      ${f('Mês de referência',r.mes)}${f('Valor',r.valor,false,true)}
+      ${f('Data de emissão',r.emissao,false,true)}${f('Data de vencimento',r.vencimento,false,true)}
+      ${f('Data de pagamento',r.pagamento,false,true)}${f('Nosso número',r.nosso_numero,false,true)}
+      ${f('Linha digitável',r.linha_digitavel,true,true)}
+    </div></div>
+    ${extras.length?`<div class="ms"><h3>Dados adicionais</h3><div class="mg">${extras.map(h=>f(h,r._raw?r._raw[h]:'')).join('')}</div></div>`:''}`;
+  document.getElementById('detailOv').classList.add('open');
+}
+function closeModal(){document.getElementById('detailOv').classList.remove('open');curRec=null;}
+function ovClick(e){if(e.target===document.getElementById('detailOv'))closeModal();}
+
+/* =========================================================
+   FORNECEDORAS
+   ========================================================= */
+function addForn(){
+  const inp=document.getElementById('novaForn'),name=inp.value.trim();
+  if(!name){toast('Digite o nome.','e');return;}
+  if(forns.includes(name)){toast('Já existe.','e');return;}
+  forns.push(name);inp.value='';save();syncSelects();renderFornTable();
+  toast(`"${name}" adicionada.`,'s');
+}
+function removeForn(name){
+  if(!confirm(`Remover "${name}"?`))return;
+  forns=forns.filter(f=>f!==name);save();syncSelects();renderFornTable();
+}
+function syncSelects(){
+  const all=[...new Set([...forns,...allRec.map(r=>r.fornecedora)])].sort();
+  const cur=document.getElementById('fForn').value;
+  document.getElementById('fForn').innerHTML='<option value="">Todas fornecedoras</option>'+all.map(f=>`<option>${esc(f)}</option>`).join('');
+  document.getElementById('fornImp').innerHTML='<option value="">Selecione a fornecedora</option>'+all.map(f=>`<option>${esc(f)}</option>`).join('');
+  document.getElementById('fForn').value=cur;
+}
+function renderFornTable(){
+  const all=[...new Set([...forns,...allRec.map(r=>r.fornecedora)])].sort();
+  document.getElementById('fornBody').innerHTML=!all.length
+    ?'<tr class="er"><td colspan="4">Nenhuma fornecedora cadastrada</td></tr>'
+    :all.map(f=>`<tr><td class="ts">${esc(f)}</td><td class="tm">${allRec.filter(r=>r.fornecedora===f).length}</td><td class="tm">${sheets.filter(s=>s.forn===f).length}</td><td><button class="btn btn-sm btn-d" onclick="removeForn('${esc(f)}')">Remover</button></td></tr>`).join('');
+}
+
+/* =========================================================
+   SHEETS HISTORY
+   ========================================================= */
+function renderSheets(){
+  const c=document.getElementById('sheetsCont');
+  if(!sheets.length){c.innerHTML='<div class="es">Nenhuma planilha ainda</div>';return;}
+  c.innerHTML=sheets.map((s,i)=>`
+    <div class="shi">
+      <div><div class="shn" title="${esc(s.name)}">${esc(s.name)}</div>
+      <div class="shm">${esc(s.forn)} · ${s.count} novos${s.skipped?` · <span class="sk">${s.skipped} ignorados</span>`:''} · ${s.date}</div></div>
+      <button class="brm" onclick="removeSheet(${i})">✕</button>
+    </div>`).join('');
+}
+function removeSheet(idx){
+  if(!confirm('Remover do histórico local?'))return;
+  sheets.splice(idx,1);save();renderSheets();
+}
+
+/* =========================================================
+   CLEAR
+   ========================================================= */
+async function confirmClear(){
+  if(!confirm('Limpar a base local?\n\nOs dados no Google Sheets NÃO serão apagados. Use esta opção para forçar uma nova sincronização.'))return;
+  allRec=[];filtered=[];sheets=[];save();syncSelects();renderSheets();renderFornTable();applyFilters();
+  setSyncStatus('','Base local limpa. Clique em ↻ Sincronizar para recarregar do Sheets.');
+  toast('Base local limpa.','s');
+}
+
+/* =========================================================
+   COL GUIDE
+   ========================================================= */
+function renderColGrid(){
+  document.getElementById('colGrid').innerHTML=Object.entries(CL).map(([k,v])=>`
+    <div class="ci"><div class="cn">${v}</div><div class="ca">${CA[k]||''}</div></div>`).join('');
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+function toast(msg,type='s'){
+  const wrap=document.getElementById('toastWrap'),el=document.createElement('div');
+  const c={s:'var(--acc)',e:'var(--red)',w:'var(--ylw)'}[type]||'var(--acc)';
+  const ic={s:'✓',e:'✕',w:'⚠'}[type]||'✓';
+  const cls={s:'ts2',e:'te',w:'tw3'}[type]||'ts2';
+  el.className=`toast ${cls}`;
+  el.innerHTML=`<span style="color:${c};font-weight:600;">${ic}</span> ${msg}`;
+  wrap.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),320);},4500);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeLock();}});
+</script>
+</body>
+</html>
