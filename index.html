@@ -450,10 +450,8 @@ const SENHA_LUCAS  = 'lucas2025';   // senha do Lucas
 const SENHA_EMILY  = 'emily2025';   // senha da Emily Arduvini
 const SENHA_EMILE  = 'ivolt2025';   // senha da Emile Angelim (IVOLT)
 
-// URL do Web App do Google Apps Script
-// Pode ser preenchida aqui diretamente (recomendado após configurar)
-// ou via painel de configuração dentro do sistema
-let WEBAPP_URL = '';
+// URL do Web App do Google Apps Script — já configurada!
+let WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby6HWCSAVpdRDNnTsDoLYFnICq6cnpO0gd9pULU_N5UoNoPS-di4cZihwDJIkCiUGMu3A/exec';
 
 /* =========================================================
    CÓDIGO DO APPS SCRIPT — será exibido no painel
@@ -612,8 +610,10 @@ function loadStorage(){
   try{
     const d=localStorage.getItem('ig_cb3');
     if(d){const p=JSON.parse(d);allRec=p.r||[];sheets=p.s||[];forns=p.f||[];}
+    // URL já está fixa no código — só usa localStorage se houver uma customizada
     const url=localStorage.getItem('ig_webapp_url');
-    if(url){WEBAPP_URL=url;document.getElementById('cfgUrl').value=url;}
+    if(url) WEBAPP_URL=url;
+    document.getElementById('cfgUrl').value=WEBAPP_URL;
   }catch(e){}
 }
 function save(){
